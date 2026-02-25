@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/totvs.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/totvs(.*)",
+      "dest": "/api/totvs.py"
+    }
+  ]
+}
