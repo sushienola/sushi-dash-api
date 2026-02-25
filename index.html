@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sushi Leblon — Dashboard</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f0f0f;
+      color: #f0f0f0;
+      min-height: 100vh;
+    }
+
+    header {
+      background: linear-gradient(135deg, #1a1a1a, #2a1a0a);
+      border-bottom: 2px solid #c8860a;
+      padding: 18px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    header h1 {
+      font-size: 1.5rem;
+      color: #f5c842;
+      letter-spacing: 1px;
+    }
+
+    header h1 span { color: #fff; font-weight: 300; }
+
+    #periodo-label {
+      font-size: 0.85rem;
+      color: #aaa;
+    }
+
+    #status-bar {
+      font-size: 0.8rem;
+      padding: 6px 32px;
+      background: #1a1a1a;
+      color: #888;
+      border-bottom: 1px solid #2a2a2a;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #888;
+      display: inline-block;
+    }
+    .dot.ok { background: #4caf50; }
+    .dot.erro { background: #f44336; }
+    .dot.loading { background: #f5c842; animation: pulse 1s infinite; }
+
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+    main {
+      max-width: 1300px;
+      margin: 0 auto;
+      padding: 28px 24px;
+    }
+
+    /* Cards topo */
+    .cards-top {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
+    }
+
+    .card {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 12px;
+      padding: 20px 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+    }
+
+    .card.verde::before { background: #4caf50; }
+    .card.dourado::before { background: #f5c842; }
+    .card.azul::before { background: #2196f3; }
+    .card.laranja::before { background: #ff9800; }
+
+    .card-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #888;
+      margin-bottom: 8px;
+    }
+
+    .card-value {
+      font-size: 1.9rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .card-value.verde { color: #4caf50; }
+    .card-value.dourado { color: #f5c842; }
+    .card-value.azul { color: #64b5f6; }
+    .card-value.laranja { color: #ffb74d; }
+
+    /* Grid de gráficos */
+    .charts-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 28px;
+    }
+
+    @media (max-width: 768px) {
+      .charts-grid { grid-template-columns: 1fr; }
+    }
+
+    .chart-box {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .chart-box h3 {
+      font-size: 0.9rem;
+      color: #aaa;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 16px;
+    }
+
+    .chart-box canvas { max-height: 260px; }
+
+    /* Tabela produtos */
+    .table-box {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 28px;
+    }
+
+    .table-box h3 {
+      font-size: 0.9rem;
+      color: #aaa;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 16px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+
+    th {
+      text-align: left;
+      color: #888;
+      font-weight: 500;
+      padding: 8px 12px;
+      border-bottom: 1px solid #2a2a2a;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+    }
+
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #1f1f1f;
+      color: #ddd;
+    }
+
+    tr:hover td { background: #222; }
+
+    td.valor { color: #4caf50; font-weight: 600; }
+    td.rank { color: #f5c842; font-weight: 700; font-size: 1rem; }
+
+    /* Mesas */
+    .mesas-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 12px;
+    }
+
+    .mesa-card {
+      background: #222;
+      border: 1px solid #333;
+      border-radius: 10px;
+      padding: 14px;
+      text-align: center;
+    }
+
+    .mesa-card.aberta {
+      border-color: #ff9800;
+      background: #1f1500;
+    }
+
+    .mesa-numero {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #f5c842;
+    }
+
+    .mesa-valor {
+      font-size: 0.8rem;
+      color: #4caf50;
+      margin-top: 4px;
+    }
+
+    .mesa-status {
+      font-size: 0.7rem;
+      color: #ff9800;
+      margin-top: 2px;
+    }
+
+    .empty { color: #555; font-size: 0.9rem; padding: 20px 0; }
+
+    /* Botão atualizar */
+    #btn-refresh {
+      background: #c8860a;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 18px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: background .2s;
+    }
+    #btn-refresh:hover { background: #f5a020; }
+    #btn-refresh:disabled { background: #444; cursor: not-allowed; }
+
+    .skeleton {
+      background: linear-gradient(90deg, #222 25%, #2a2a2a 50%, #222 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 6px;
+      height: 2rem;
+    }
+    @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🍣 Sushi Leblon <span>— Dashboard</span></h1>
+  <div style="display:flex;align-items:center;gap:16px">
+    <span id="periodo-label">Carregando...</span>
+    <button id="btn-refresh" onclick="carregar()">↻ Atualizar</button>
+  </div>
+</header>
+
+<div id="status-bar">
+  <span class="dot loading" id="dot"></span>
+  <span id="status-msg">Conectando à API TOTVS...</span>
+</div>
+
+<main>
+  <!-- Cards topo -->
+  <div class="cards-top">
+    <div class="card verde">
+      <div class="card-label">💰 Vendas Totais</div>
+      <div class="card-value verde" id="val-total">—</div>
+    </div>
+    <div class="card dourado">
+      <div class="card-label">📋 Total de Pedidos</div>
+      <div class="card-value dourado" id="val-pedidos">—</div>
+    </div>
+    <div class="card azul">
+      <div class="card-label">🎯 Ticket Médio</div>
+      <div class="card-value azul" id="val-ticket">—</div>
+    </div>
+    <div class="card laranja">
+      <div class="card-label">🪑 Mesas Abertas</div>
+      <div class="card-value laranja" id="val-mesas">—</div>
+    </div>
+  </div>
+
+  <!-- Gráficos -->
+  <div class="charts-grid">
+    <div class="chart-box">
+      <h3>💳 Formas de Pagamento</h3>
+      <canvas id="chart-pagamento"></canvas>
+    </div>
+    <div class="chart-box">
+      <h3>🍱 Top Produtos (Qtd)</h3>
+      <canvas id="chart-produtos"></canvas>
+    </div>
+  </div>
+
+  <!-- Tabela produtos -->
+  <div class="table-box">
+    <h3>📊 Ranking de Produtos</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Produto</th>
+          <th>Quantidade</th>
+          <th>Faturamento</th>
+        </tr>
+      </thead>
+      <tbody id="tabela-produtos">
+        <tr><td colspan="4" class="empty">Carregando...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Mesas -->
+  <div class="table-box">
+    <h3>🪑 Mesas Abertas</h3>
+    <div class="mesas-grid" id="mesas-grid">
+      <p class="empty">Carregando...</p>
+    </div>
+  </div>
+</main>
+
+<script>
+  // ⚠️ TROQUE PELA URL DO SEU BACKEND NO VERCEL após fazer o deploy
+  const API_URL = "https://SEU-PROJETO.vercel.app/api/totvs";
+
+  let chartPagamento = null;
+  let chartProdutos = null;
+
+  const fmt = (v) => "R$ " + Number(v).toLocaleString("pt-BR", {minimumFractionDigits:2});
+
+  function setStatus(tipo, msg) {
+    document.getElementById("dot").className = "dot " + tipo;
+    document.getElementById("status-msg").textContent = msg;
+  }
+
+  async function carregar() {
+    const btn = document.getElementById("btn-refresh");
+    btn.disabled = true;
+    setStatus("loading", "Buscando dados na API TOTVS...");
+
+    try {
+      const res = await fetch(API_URL);
+      const d = await res.json();
+
+      if (d.status === "erro") {
+        setStatus("erro", "Erro: " + d.mensagem);
+        btn.disabled = false;
+        return;
+      }
+
+      // Cards
+      document.getElementById("val-total").textContent = fmt(d.total_vendas);
+      document.getElementById("val-pedidos").textContent = d.total_pedidos.toLocaleString("pt-BR");
+      document.getElementById("val-ticket").textContent = fmt(d.ticket_medio);
+      document.getElementById("val-mesas").textContent = d.mesas_abertas_count;
+      document.getElementById("periodo-label").textContent = d.periodo;
+
+      // Gráfico pagamentos
+      const pgLabels = d.formas_pagamento.map(f => f.nome);
+      const pgData = d.formas_pagamento.map(f => f.valor);
+      const cores = ["#f5c842","#4caf50","#2196f3","#ff9800","#e91e63","#9c27b0","#00bcd4"];
+
+      if (chartPagamento) chartPagamento.destroy();
+      chartPagamento = new Chart(document.getElementById("chart-pagamento"), {
+        type: "doughnut",
+        data: {
+          labels: pgLabels,
+          datasets: [{ data: pgData, backgroundColor: cores, borderWidth: 0 }]
+        },
+        options: {
+          plugins: {
+            legend: { labels: { color: "#ccc", font: { size: 12 } } },
+            tooltip: { callbacks: { label: ctx => " " + fmt(ctx.raw) } }
+          }
+        }
+      });
+
+      // Gráfico produtos (top 8)
+      const top8 = d.top_produtos.slice(0, 8);
+      const prLabels = top8.map(p => p.nome.length > 20 ? p.nome.substring(0,20)+"…" : p.nome);
+      const prData = top8.map(p => p.quantidade);
+
+      if (chartProdutos) chartProdutos.destroy();
+      chartProdutos = new Chart(document.getElementById("chart-produtos"), {
+        type: "bar",
+        data: {
+          labels: prLabels,
+          datasets: [{
+            data: prData,
+            backgroundColor: "#c8860a",
+            borderRadius: 6,
+          }]
+        },
+        options: {
+          indexAxis: "y",
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: "#888" }, grid: { color: "#2a2a2a" } },
+            y: { ticks: { color: "#ccc", font: { size: 11 } }, grid: { display: false } }
+          }
+        }
+      });
+
+      // Tabela produtos
+      const tbody = document.getElementById("tabela-produtos");
+      if (d.top_produtos.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="empty">Nenhum produto encontrado</td></tr>';
+      } else {
+        tbody.innerHTML = d.top_produtos.map((p, i) => `
+          <tr>
+            <td class="rank">${i + 1}</td>
+            <td>${p.nome}</td>
+            <td>${p.quantidade.toLocaleString("pt-BR")}</td>
+            <td class="valor">${fmt(p.valor)}</td>
+          </tr>
+        `).join("");
+      }
+
+      // Mesas abertas
+      const mesasGrid = document.getElementById("mesas-grid");
+      if (d.mesas_abertas.length === 0) {
+        mesasGrid.innerHTML = '<p class="empty">Nenhuma mesa aberta no momento</p>';
+      } else {
+        mesasGrid.innerHTML = d.mesas_abertas.map(m => `
+          <div class="mesa-card aberta">
+            <div class="mesa-numero">Mesa ${m.numero}</div>
+            <div class="mesa-valor">${fmt(m.valor)}</div>
+            <div class="mesa-status">● Aberta</div>
+          </div>
+        `).join("");
+      }
+
+      setStatus("ok", "Atualizado em " + new Date().toLocaleTimeString("pt-BR"));
+
+    } catch (err) {
+      setStatus("erro", "Erro de conexão: " + err.message);
+    }
+
+    btn.disabled = false;
+  }
+
+  // Carrega ao abrir e atualiza a cada 5 minutos
+  carregar();
+  setInterval(carregar, 5 * 60 * 1000);
+</script>
+</body>
+</html>
